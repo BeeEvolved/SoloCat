@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solo Cat</title>
+    <style>
+        html, body {
+            margin: 0;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        body {
+            background-size: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Arial', sans-serif;
+            position: relative;
+            z-index: 0;
+            height: 100vh;
+        }
+
+        #c {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
+        #content {
+            text-align: center;
+            max-width: 600px;
+            margin: auto;
+            position: relative;
+            z-index: 1;
+            background-color: rgba(0, 0, 0, .80);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 205, 66);
+            max-height: 70vh; 
+            overflow-y: auto; 
+}
+        }
+
+        #content h1 {
+            margin-top: 0;
+            
+            
+        }
+
+        #status-code, #leaderboard, #miner-status {
+            color: #ffcd42;
+            white-space: pre-line;
+        }
+
+        .miner-input {
+            width: 100%;
+            padding: 10px;
+            background-color: #fae19d;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+
+        #miner-lookup-btn {
+            padding: 10px;
+            background-color: #ffcd42;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #miner-lookup-btn:hover {
+            background-color: #ffd300;
+        }
+
+        .hexagon-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+    </style>
+
+</head>
+<body>
+    
+    <canvas id="c" class="hexagon-canvas"></canvas>
+    <div id="content">
+        <img src="logo.png" alt="Solo.Cat Logo" style="display: block; margin: 0 auto;">
+        <h3 style="color: #ffcd42;">0% fees, non-custodial, Coinbase transaction payout, Bitcoin transaction fees to miner.</h3>
+        <h1 style="color: #ffcd42;">Connect</h1>
+        <h4 style="color: #ffcd42;">stratum+tcp://solo.cat:3333 -u YourBitcoinAddress -p x</h4>
+        <a href="doc.html" style="font-size: 15px; color: #ffcd42;">Documentation</a>
+        <h1 style="color: #ffcd42;">Status</h1>
+        <div id="status-code"></div>
+        <h1 style="color: #ffcd42;">Miner Lookup</h1>
+        <label for="walletAddress">Enter Wallet Address:</label>
+        <input type="text" id="walletAddress" class="miner-input" placeholder="Enter your wallet address">
+        <button id="miner-lookup-btn">Lookup Miner</button>
+        <div id="miner-status"></div>
+        <h1 style="color: #ffcd42;">Leaderboard</h1>
+        <h4 style="color: #ffcd42;">hashrate1d</h4>
+        <div id="leaderboard"></div>
+         <a href="https://solo.cat/doc.html#Terms" style="font-size: 15px; color: #ffcd42;">Terms</a>
+    </div>
+
+   <script>
+       function updateStatus() {
+    var statusElement = document.getElementById('status-code');
+
+    fetch('https://solo.cat/status.log')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.text();
+        })
+        .then(data => {
+            console.log('Fetched data:', data);
+            statusElement.textContent = data;
+        })
+        .catch(error => {
+            console.error('Error fetching status.log:', error);
+        });
+}
+
+function fetchAndUpdateStatus() {
+    updateStatus();
+    setInterval(updateStatus, 60000); // Fetch every 60 seconds
+}
+
+function fetchLeaderboard() {
+    fetch('https://solo.cat/users/')
+        .then(response => response.text())
+        .then(data => {
+            const walletAddresses = data.match(/href="([^"]+)"/g).map(match => match.split('"')[1]);
+
+            const promises = walletAddresses.map(walletAddress => {
+                return fetch(`https://solo.cat/users/${walletAddress}`)
+                    .then(response => response.json())
+                    .catch(error => {
+                        console.error(`Error fetching user data for ${walletAddress}:`, error);
+                        return null;
+                    });
+            });
+
+            return Promise.all(promises);
+        })
+        .then(userDatas => {
+            const validUserDatas = userDatas.filter(userData => userData !== null);
+            const sortedUserDatas = validUserDatas.sort(compare);
+
+            updateLeaderboard(sortedUserDatas.slice(0, 20));
+        })
+        .catch(error => {
+            console.error('Error fetching leaderboard:', error);
+        });
+}
+
+function compare(a, b) {
+    const hashrateA = getHashrateValue(a.hashrate1d);
+    const hashrateB = getHashrateValue(b.hashrate1d);
+
+    return hashrateB - hashrateA;
+}
+
+function getHashrateValue(hashrate) {
+    const match = hashrate.match(/([\d.]+)\s*([a-zA-Z]+)/);
+    if (!match) {
+        // If the format is not recognized, treat it as Kilohash
+        return parseFloat(hashrate);
+    }
+
+    const value = parseFloat(match[1]);
+    const unit = match[2].toUpperCase();
+
+    switch (unit) {
+        case 'G':
+            return value * 1e9; // Gigahash
+        case 'T':
+            return value * 1e12; // Terahash
+        case 'P':
+            return value * 1e15; // Petahash
+        case 'E':
+            return value * 1e18; // Exahash
+        default:
+            return parseFloat(hashrate);
+    }
+}
+
+function updateLeaderboard(userDatas) {
+    const leaderboardElement = document.getElementById('leaderboard');
+    leaderboardElement.innerHTML = userDatas.map((userData, index) => {
+        return `<div>${index + 1}. ${userData.worker[0].workername} Hashrate: ${userData.hashrate1d}</div>`;
+    }).join('\n');
+}
+
+function lookupMiner() {
+    var walletAddressInput = document.getElementById('walletAddress');
+    var walletAddress = walletAddressInput.value.trim();
+
+    if (walletAddress !== '') {
+        fetch(`https://solo.cat/users/${walletAddress}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                displayMinerStatus(data);
+            })
+            .catch(error => {
+                console.error('Error fetching miner status:', error);
+                displayMinerStatusError();
+            });
+    }
+}
+
+function displayMinerStatus(data) {
+    var minerStatusElement = document.getElementById('miner-status');
+    minerStatusElement.innerHTML = `
+        <h2>Miner Status for ${data.worker[0].workername}</h2>
+        <pre>${JSON.stringify(data, null, 2)}</pre>
+    `;
+}
+
+function displayMinerStatusError() {
+    var minerStatusElement = document.getElementById('miner-status');
+    minerStatusElement.innerHTML = '<p>Error fetching miner status. Please check the wallet address.</p>';
+}
+
+var hexagon_radius = 50;
+var hexagon_max_absolute_speed = 0.01;
+var hexagon_space_between = 2;
+var hexagon_line_width = 1;
+var hexagon_color = '#ffcd42';
+
+var canvas, ctx;
+
+var hexagons = [];
+
+var s3p3 = Math.sqrt(3);
+
+function init() {
+    canvas = document.getElementById('c');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    canvas.style.width = canvas.width + 'px';
+    canvas.style.height = canvas.height + 'px';
+    ctx = canvas.getContext('2d');
+
+    ctx.globalCompositeOperation = "source-over";
+
+    var hw = Math.ceil(canvas.width / (1.5 * hexagon_radius + hexagon_space_between * 2)) + 1;
+    var hh = Math.ceil(canvas.height / (s3p3 * hexagon_radius + hexagon_space_between * 2)) + 1;
+
+    for (var x = 0; x < hw; x++)
+        for (var y = 0; y < hh; y++)
+            addHexagon(
+                hexagon_radius + hexagon_space_between + (1.5 * hexagon_radius + hexagon_space_between * 2) * x,
+                s3p3 * hexagon_radius / 2 + hexagon_space_between + (s3p3 * hexagon_radius + hexagon_space_between * 2) * y - (x % 2 ? s3p3 * hexagon_radius / 2 : 0),
+                {
+                    l: 0
+                }
+            );
+
+    ctx.lineWidth = hexagon_line_width;
+
+    loop();
+}
+
+function loop() {
+    requestAnimFrame(loop);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.beginPath();
+
+    for (var i = 0; i < hexagons.length; i++)
+        drawHexagonPath(i);
+
+    ctx.shadowColor = hexagon_color;
+    ctx.shadowBlur = 20;
+    ctx.strokeStyle = hexagon_color;
+    ctx.stroke();
+}
+
+function addHexagon(x, y, opts) {
+    var l = Math.floor(Math.random() * 6),
+        p = Math.random();
+
+    if (!opts) opts = {};
+
+    hexagons.push({
+        sl: opts.l || opts.l === 0 ? opts.l : l,
+        p: opts.p || opts.p === 0 ? opts.p : p,
+        x: x,
+        y: y,
+        speed: opts.speed || opts.speed === 0 ? opts.speed : (Math.random() * hexagon_max_absolute_speed * 2 - hexagon_max_absolute_speed)
+    });
+}
+
+function drawHexagonPath(hex_index) {
+    var hex = hexagons[hex_index];
+
+    ctx.moveTo(
+        hex.x + Math.cos(Math.PI / 3 * hex.sl) * hexagon_radius + Math.cos(Math.PI / 3 * (hex.sl + 2)) * hexagon_radius * hex.p,
+        hex.y + Math.sin(Math.PI / 3 * hex.sl) * hexagon_radius + Math.sin(Math.PI / 3 * (hex.sl + 2)) * hexagon_radius * hex.p
+    );
+
+    ctx.lineTo(
+        hex.x + Math.cos(Math.PI / 3 * (hex.sl + 1)) * hexagon_radius,
+        hex.y + Math.sin(Math.PI / 3 * (hex.sl + 1)) * hexagon_radius
+    );
+
+    ctx.lineTo(
+        hex.x + Math.cos(Math.PI / 3 * (hex.sl + 2)) * hexagon_radius,
+        hex.y + Math.sin(Math.PI / 3 * (hex.sl + 2)) * hexagon_radius
+    );
+
+    ctx.lineTo(
+        hex.x + Math.cos(Math.PI / 3 * (hex.sl + 3)) * hexagon_radius,
+        hex.y + Math.sin(Math.PI / 3 * (hex.sl + 3)) * hexagon_radius
+    );
+
+    ctx.lineTo(
+        hex.x + Math.cos(Math.PI / 3 * (hex.sl + 3)) * hexagon_radius + Math.cos(Math.PI / 3 * (hex.sl + 5)) * hexagon_radius * hex.p,
+        hex.y + Math.sin(Math.PI / 3 * (hex.sl + 3)) * hexagon_radius + Math.sin(Math.PI / 3 * (hex.sl + 5)) * hexagon_radius * hex.p
+    );
+
+    hex.p += hex.speed;
+    if (hex.p > 1 || hex.p < 0) {
+        hex.p = hex.speed < 0 ? 1 : 0;
+        hex.sl += hex.speed < 0 ? -1 : 1;
+        hex.sl = hex.sl % 6;
+        hex.sl = hex.sl < 0 ? 4 - hex.sl : hex.sl;
+    }
+
+    hexagons[hex_index] = hex;
+}
+
+window.onload = function () {
+    fetchAndUpdateStatus();
+    fetchLeaderboard();
+    init();
+
+    // Event listener for miner lookup
+    document.getElementById('miner-lookup-btn').addEventListener('click', lookupMiner);
+};
+
+window.requestAnimFrame = (function () {
+    return window.requestAnimationFrame ||
+        window.webkitRequestAnimationFrame ||
+        window.mozRequestAnimationFrame ||
+        function (callback) {
+            window.setTimeout(callback, 1000 / 60);
+        };
+})();
+
+    </script>
+</body>
+</html>
