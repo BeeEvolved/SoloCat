@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solo Cat Documentation</title>
+    <style>
+     @import url('https://fonts.googleapis.com/css2?family=Montserrat&display=swap');
+
+
+:root {
+    --background: #292C4A;
+    --background-dark: #272944;
+    --foreground: rgb(255, 255, 255);
+    --accent-color: rgb(216, 191, 228);
+
+    --nav-width-collapsed: 80px;
+    --nav-width: 350px;
+    --main-padding: 20px;
+}
+
+
+* {
+    font-family: 'Montserrat', sans-serif;
+    color: var(--foreground);
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background: var(--background);
+}
+
+main {
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-right: var(--main-padding);
+    padding-left: calc(var(--nav-width-collapsed) + var(--main-padding));
+}
+
+.menu-icon {
+    width: 30px;
+    margin: 25px;
+    transition: all 1s ease;
+}
+
+nav {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    height: 100%;
+    background: #181a2ee1;
+    backdrop-filter: blur(5px);
+    width: var(--nav-width-collapsed);
+    overflow: hidden;
+    transition: all 1s ease;
+    box-shadow: 0 20px 35px rgba(0, 0, 0, 0.1);
+    border-radius: 0px 15px 15px 0;
+}
+
+nav ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+nav li {
+    position: relative;
+    display: block;
+}
+
+.nav-link {
+    position: relative;
+    font-size: 16px;
+    display: table;
+    width: var(--nav-width);
+    padding: 10px;
+    text-decoration: none;
+    transition: all 0.5s ease;
+    opacity: 0%;
+}
+
+.nav-header {
+    margin: 20px;
+    font-size: 1.5em;
+    font-weight: 600;
+    width: var(--nav-width);
+    transition: all 0.5s ease;
+    opacity: 0%;
+}
+
+nav:hover {
+    width: var(--nav-width);
+    overflow-y: auto;
+    transition: all 0.5s ease;
+}
+
+nav:hover .nav-link {
+    opacity: 100%;
+    transition: opacity 1s ease;
+}
+
+nav:hover .nav-header {
+    opacity: 100%;
+    transition: opacity 1s ease;
+}
+
+nav:hover .menu-icon {
+    transform: rotate(90deg);
+    transition: all 1s ease;
+}
+
+nav a:hover {
+    border-left-style: solid;
+    border-width: 4px;
+    border-left-color: var(--accent-color);
+    font-weight: 600;
+}
+
+.nav-item {
+    position: relative;
+    margin-left: 12px;
+}
+
+
+header {
+    font-size: 2em;
+    font-weight: 600;
+    margin-top: 2em;
+}
+
+article {
+    font-size: 16px;
+    line-height: 2;
+}
+
+code {
+    background: #181a2e88;
+    border-radius: 5px;
+    color: var(--accent-color);
+    page-break-inside: avoid;
+    font-family: monospace;
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 1.6em;
+    max-width: 100%;
+    padding: 1em 1.5em;
+    display: block;
+    word-wrap: break-word;
+}
+
+::-webkit-scrollbar {
+    width: 0.5em;
+}
+
+::-webkit-scrollbar-track {
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+    background-color: var(--background-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--accent-color);
+    border-radius: 5px;
+}
+
+@media print {
+    nav {
+        display: none;
+    }
+
+    * {
+        background-color: #fff !important;
+        color: #000 !important;
+    }
+
+    main {
+        padding-left: 0 !important;
+    }
+}
+
+@media only screen and (max-width: 768px) {
+    /* For mobile phones: */
+    nav {
+      width: 60px;
+    }
+    .menu-icon {
+        width: 35px;
+        margin: 15px;
+        transition: all 1s ease;
+    }
+    main {
+        padding-left: calc(60px + var(--main-padding));
+    }
+  }
+
+
+    </style>
+    
+</head>
+<body>
+    body>
+    <main id="main-doc">
+
+        <nav id="navbar">
+            <img src="https://www.freeiconspng.com/uploads/white-arrow-transparent-png-22.png" class="menu-icon" alt="">
+            <header class="nav-header">Solo Cat Documentation</header>
+            <ul>
+                <li>
+                    <a class="nav-link" href="#Introduction">
+                        <span class="nav-item">Introduction</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" href="#About ckpool source code">
+                        <span class="nav-item">About ckpool source code</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" href="#Terms">
+                        <span class="nav-item">Terms</span>
+                    </a>
+                </li>
+
+
+            </ul>
+        </nav>
+
+
+
+        <section class="main-section" id="Introduction">
+            <header>Introduction</header>
+            <article>
+                <p>
+                    As Solo Cat is a completely FREE service that takes 0% fees, it heavily relies on the generosity of its users through donations to sustain the platform. Your contribution is greatly appreciated. Please consider making a donation to support Solo Cat. Solo Cat Bitcoin Donation Address: 1P6gz8bggna5s93th9CxNommxcNivN2bPp  .
+                    Solo Cat is a non-custodial tool that pays out the miner directly from the Bitcoin Coinbase transaction. Solo Cat never takes possession of your Bitcoin block rewards. Once you solve a block on Solo Cat, you actually receive the Bitcoin block rewards and all fees gained sent directly from the Bitcoin block rewards coinbase transaction to whatever Bitcoin address you have specified. Solo Cat is a free-to-use, zero-fees tool for solo mining and is maintained through user donations. It is based on the legendary ckpool source code by Dr. Con Kolivas, which is arguably the most efficient and powerful, having signed more solo blocks than any other available source code.
+                    Solo Cat operates as a free-to-use and use-at-your-own-risk service, funded 100% by user donations. Dr. Con Kolivas has invested a lot of energy and effort in the development of the solo ckpool source code. Please consider making a donation to his address found in the source code: 14BMjogz69qe8hk9thyzbmR5pg34mVKB1e.
+                </p>
+                <p>
+                    Connect
+                <ul>
+                    <li>
+                        <code>
+                            stratum+tcp://solo.cat:3333 -u YourBitcoinAddress -p x
+                        </code>
+                    </li>
+
+                </ul>
+                </p>
+            </article>
+        </section>
+
+
+        <section class="main-section" id="About ckpool source code">
+            <header>About ckpool source code</header>
+            <article>
+                <p>
+                    About CKPool powering Solo Cat. It boasts ultra-low overhead, is massively scalable, and operates as a multi-process, multi-threaded modular Bitcoin mining solo mining, library in C for Linux.
+                    LICENSE:
+
+                    GNU Public License V3. Refer to the included COPYING file for details.
+                <ul>
+                    <li>
+                        Solo Cat runs ckpool in option: -B, initiating CKPool in BTCSOLO mode specifically designed for solo mining. All connected usernames must be valid Bitcoin addresses, and 100% of the block reward will go to the user who successfully solves the block.
+                    </li>
+                    <li>
+                        <a href="https://bitbucket.org/ckolivas/ckpool-solo/src/solobtc/" style="font-size: 15px; color: #ffcd42;">Source Code:</a>
+                    </li>
+                    
+                </ul>
+                </p>
+            </article>
+        </section>
+
+
+        <section class="main-section" id="Terms">
+            <header>Terms</header>
+            <article>
+                <p>
+                    By connecting to Solo Cat, you agree that you do NOT hold Solo Cat liable for any lost Bitcoin, shares, orphan blocks, or any other potential losses, whether foreseen or unforeseen. You expressly acknowledge that by connecting, you are utilizing this free service entirely at your own risk. Additionally, you affirm that you are legally and lawfully able to mine Bitcoin in accordance with the laws governing your place of residence.
+
+                    In consideration of using Solo Cat, you further agree not to hold Solo Cat operators, managers, code contributors, or any other miners associated with the platform liable for any issues that may arise during your usage. You explicitly acknowledge and accept that you are engaging with this FREE service at your own risk.
+
+                    Moreover, you understand and agree to comply with any additional terms, conditions, or guidelines that Solo Cat may provide or update. It is your responsibility to stay informed about any changes to these terms, and your continued use of Solo Cat constitutes your acceptance of any modifications. Solo Cat reserves the right to alter, suspend, or terminate its services at any time, with or without notice.
+                </p>
+                
+            </article>
+        </section>
+
+
+      
+    </main>
+</body>
+
+
+    
+</body>
+</html>
