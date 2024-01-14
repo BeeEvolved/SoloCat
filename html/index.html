@@ -39,15 +39,15 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(255, 205, 66);
-            max-height: 70vh; 
-            overflow-y: auto; 
+            max-height: 70vh;
+            overflow-y: auto;
 }
         }
 
         #content h1 {
             margin-top: 0;
-            
-            
+
+
         }
 
         #status-code, #leaderboard, #miner-status {
@@ -87,29 +87,28 @@
 
 </head>
 <body>
-    
-    <canvas id="c" class="hexagon-canvas"></canvas>
-    <div id="content">
-        <img src="logo.png" alt="Solo.Cat Logo" style="display: block; margin: 0 auto;">
-        <h3 style="color: #ffcd42;">0% fees, non-custodial, Coinbase transaction payout, Bitcoin transaction fees to miner.</h3>
-        <h1 style="color: #ffcd42;">Connect</h1>
-        <h4 style="color: #ffcd42;">stratum+tcp://solo.cat:3333 -u YourBitcoinAddress -p x</h4>
-        <a href="doc.html" style="font-size: 15px; color: #ffcd42;">Documentation</a>
-        <h1 style="color: #ffcd42;">Status</h1>
-        <div id="status-code"></div>
-        <h1 style="color: #ffcd42;">Miner Lookup</h1>
-        <label for="walletAddress">Enter Wallet Address:</label>
-        <input type="text" id="walletAddress" class="miner-input" placeholder="Enter your wallet address">
-        <button id="miner-lookup-btn">Lookup Miner</button>
-        <div id="miner-status"></div>
-        <h1 style="color: #ffcd42;">Leaderboard</h1>
-        <h4 style="color: #ffcd42;">hashrate1d</h4>
-        <div id="leaderboard"></div>
-         <a href="https://solo.cat/doc.html#Terms" style="font-size: 15px; color: #ffcd42;">Terms</a>
-    </div>
 
-   <script>
-       function updateStatus() {
+<canvas id="c" class="hexagon-canvas"></canvas>
+<div id="content">
+    <img src="logo.png" alt="Solo.Cat Logo" style="display: block; margin: 0 auto;">
+    <h3 style="color: #ffcd42;">0% fees, non-custodial, Coinbase transaction payout, Bitcoin transaction fees to miner.</h3>
+    <h1 style="color: #ffcd42;">Connect</h1>
+    <h4 style="color: #ffcd42;">stratum+tcp://solo.cat:3333 -u YourBitcoinAddress -p x</h4>
+    <a href="doc.html" style="font-size: 15px; color: #ffcd42;">Documentation</a>
+    <div id="status-code"></div>
+    <h1 style="color: #ffcd42;">Miner Lookup</h1>
+    <label for="walletAddress">Enter Wallet Address:</label>
+    <input type="text" id="walletAddress" class="miner-input" placeholder="Enter your wallet address">
+    <button id="miner-lookup-btn">Lookup Miner</button>
+    <div id="miner-status"></div>
+    <h1 style="color: #ffcd42;">Leaderboard</h1>
+    <h4 style="color: #ffcd42;">hashrate1hr</h4>
+    <div id="leaderboard"></div>
+    <a href="https://solo.cat/doc.html#Terms" style="font-size: 15px; color: #ffcd42;">Terms</a>
+</div>
+
+<script>
+function updateStatus() {
     var statusElement = document.getElementById('status-code');
 
     fetch('https://solo.cat/status.log')
@@ -120,8 +119,55 @@
             return response.text();
         })
         .then(data => {
-            console.log('Fetched data:', data);
-            statusElement.textContent = data;
+            const lines = data.trim().split('\n');
+            const parsedData = lines.map(line => {
+                try {
+                    const jsonData = JSON.parse(line);
+                    return jsonData;
+                } catch (error) {
+                    console.error('Error parsing JSON:', error);
+                    return null;
+                }
+            });
+
+            const validData = parsedData.filter(entry => entry !== null);
+
+            
+            const formattedData = {
+                "bestshare": abbreviateNumber(validData[2].bestshare),
+                "Users": validData[0].Users,
+                "Workers": validData[0].Workers,
+                "hashrate1m": validData[1].hashrate1m,
+                "SPS1m": validData[2].SPS1m,
+                "lastupdate": new Date(validData[0].lastupdate * 1000).toLocaleString(),
+                "Idle": validData[0].Idle,
+                "Disconnected": validData[0].Disconnected,
+                "hashrate5m": validData[1].hashrate5m,
+                "hashrate15m": validData[1].hashrate15m,
+                "hashrate1hr": validData[1].hashrate1hr,
+                "hashrate6hr": validData[1].hashrate6hr,
+                "hashrate1d": validData[1].hashrate1d,
+                "hashrate7d": validData[1].hashrate7d,
+                "diff": validData[2].diff,
+                "accepted": validData[2].accepted,
+                "rejected": validData[2].rejected,
+                "SPS5m": validData[2].SPS5m,
+                "SPS15m": validData[2].SPS15m,
+                "SPS1h": validData[2].SPS1h,
+                "runtime": convertRuntime(validData[0].runtime) // Include runtime
+            };
+
+           
+            const importantHeaders = ["bestshare", "Users", "Workers", "hashrate1m", "SPS1m"];
+            const importantData = importantHeaders.map(header => `<h2>${header}: ${formattedData[header]}</h2>`);
+
+            // Include runtime as an H2 under "SPS1m" if it's not already in important headers
+            if (!importantHeaders.includes("runtime")) {
+                importantData.push(`<h2>runtime: ${formattedData.runtime}</h2>`);
+            }
+
+            // Display important values above the rest of the data
+            statusElement.innerHTML = `Status<br>${importantData.join('')}\n<pre>${JSON.stringify(formattedData, null, 2)}</pre>`;
         })
         .catch(error => {
             console.error('Error fetching status.log:', error);
@@ -132,6 +178,46 @@ function fetchAndUpdateStatus() {
     updateStatus();
     setInterval(updateStatus, 60000); // Fetch every 60 seconds
 }
+
+function convertRuntime(runtime) {
+    if (typeof runtime !== 'number' || isNaN(runtime)) {
+        return 'Invalid Runtime';
+    }
+
+    const runtimeDays = Math.floor(runtime / (24 * 3600));
+    const runtimeHours = Math.floor((runtime % (24 * 3600)) / 3600);
+    return `${runtimeDays}d ${runtimeHours}h`;
+}
+
+function convertLastUpdate(lastupdate) {
+    if (typeof lastupdate !== 'number' || isNaN(lastupdate)) {
+        return 'Invalid Date';
+    }
+
+    const lastUpdateDate = new Date(lastupdate * 1000);
+    if (isNaN(lastUpdateDate.getTime())) {
+        return 'Invalid Date';
+    }
+
+    return lastUpdateDate.toLocaleString();
+}
+
+function abbreviateNumber(num) {
+    if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
+    if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+    if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+    return num;
+}
+
+
+
+
+window.onload = function () {
+    fetchAndUpdateStatus();
+
+};
+
+
 
 function fetchLeaderboard() {
     fetch('https://solo.cat/users/')
@@ -154,7 +240,7 @@ function fetchLeaderboard() {
             const validUserDatas = userDatas.filter(userData => userData !== null);
             const sortedUserDatas = validUserDatas.sort(compare);
 
-            updateLeaderboard(sortedUserDatas.slice(0, 20));
+            updateLeaderboard(sortedUserDatas);
         })
         .catch(error => {
             console.error('Error fetching leaderboard:', error);
@@ -162,8 +248,8 @@ function fetchLeaderboard() {
 }
 
 function compare(a, b) {
-    const hashrateA = getHashrateValue(a.hashrate1d);
-    const hashrateB = getHashrateValue(b.hashrate1d);
+    const hashrateA = getHashrateValue(a.hashrate1hr);
+    const hashrateB = getHashrateValue(b.hashrate1hr);
 
     return hashrateB - hashrateA;
 }
@@ -171,7 +257,7 @@ function compare(a, b) {
 function getHashrateValue(hashrate) {
     const match = hashrate.match(/([\d.]+)\s*([a-zA-Z]+)/);
     if (!match) {
-        // If the format is not recognized, treat it as Kilohash
+       
         return parseFloat(hashrate);
     }
 
@@ -194,9 +280,12 @@ function getHashrateValue(hashrate) {
 
 function updateLeaderboard(userDatas) {
     const leaderboardElement = document.getElementById('leaderboard');
-    leaderboardElement.innerHTML = userDatas.map((userData, index) => {
-        return `<div>${index + 1}. ${userData.worker[0].workername} Hashrate: ${userData.hashrate1d}</div>`;
-    }).join('\n');
+    leaderboardElement.innerHTML = userDatas
+        .filter(userData => getHashrateValue(userData.hashrate1hr) > 0)
+        .map((userData, index) => {
+            return `<div>${index + 1}. ${userData.worker[0].workername} Hashrate: ${userData.hashrate1hr}</div>`;
+        })
+        .join('\n');
 }
 
 function lookupMiner() {
@@ -351,7 +440,7 @@ window.onload = function () {
     fetchLeaderboard();
     init();
 
-    // Event listener for miner lookup
+    
     document.getElementById('miner-lookup-btn').addEventListener('click', lookupMiner);
 };
 
